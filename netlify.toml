@@ -11,6 +11,10 @@
   function = "mcp-simple"
   path = "/mcp"
 
+[[edge_functions]]
+  function = "hello"
+  path = "/hello"
+
 # Subdomain redirect for mcp.penguinbank.cloud
 [[redirects]]
   from = "https://mcp.penguinbank.cloud/*"
