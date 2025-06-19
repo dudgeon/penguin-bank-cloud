@@ -39,6 +39,8 @@ exports.handler = async (event, context) => {
             protocolVersion: "2024-11-05",
             capabilities: {
               tools: {},
+              resources: {},
+              prompts: {},
             },
             serverInfo: {
               name: "penguin-bank",
@@ -46,6 +48,23 @@ exports.handler = async (event, context) => {
               description: "Penguin Bank MCP Server",
             },
           },
+          id: body.id,
+        }),
+      };
+    }
+
+    // Handle notifications
+    if (body.method === "notifications/initialized") {
+      // Client has completed initialization
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          result: null,
           id: body.id,
         }),
       };
@@ -80,6 +99,42 @@ exports.handler = async (event, context) => {
                 },
               },
             ],
+          },
+          id: body.id,
+        }),
+      };
+    }
+
+    // Handle resources list (required by MCP protocol)
+    if (body.method === "resources/list") {
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          result: {
+            resources: [],  // No resources for now
+          },
+          id: body.id,
+        }),
+      };
+    }
+
+    // Handle prompts list (required by MCP protocol)
+    if (body.method === "prompts/list") {
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          result: {
+            prompts: [],  // No prompts for now
           },
           id: body.id,
         }),
