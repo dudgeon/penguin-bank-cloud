@@ -27,9 +27,6 @@ pop3_port = 54326
 [storage]
 enabled = true
 port = 54327
-image_transformation = {
-  enabled = true
-}
 
 [auth]
 enabled = true
@@ -49,58 +46,6 @@ enable_confirmations = false
 [auth.sms]
 enable_signup = false
 enable_confirmations = false
-
-# Use pre-defined roles
-[auth.external.apple]
-enabled = false
-
-[auth.external.azure]
-enabled = false
-
-[auth.external.bitbucket]
-enabled = false
-
-[auth.external.discord]
-enabled = false
-
-[auth.external.facebook]
-enabled = false
-
-[auth.external.github]
-enabled = false
-
-[auth.external.gitlab]
-enabled = false
-
-[auth.external.google]
-enabled = false
-
-[auth.external.keycloak]
-enabled = false
-
-[auth.external.linkedin]
-enabled = false
-
-[auth.external.notion]
-enabled = false
-
-[auth.external.spotify]
-enabled = false
-
-[auth.external.slack]
-enabled = false
-
-[auth.external.twitch]
-enabled = false
-
-[auth.external.twitter]
-enabled = false
-
-[auth.external.workos]
-enabled = false
-
-[auth.external.zoom]
-enabled = false
 
 [edge_runtime]
 enabled = true

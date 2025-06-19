@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   parser: '@typescript-eslint/parser',
   extends: [
     'eslint:recommended',
@@ -24,6 +24,7 @@ module.exports = {
     'dist/',
     'node_modules/',
     '.netlify/',
+    'netlify/',
     'src/types/database.ts', // Generated file
   ],
 };
