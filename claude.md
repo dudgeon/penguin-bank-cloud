@@ -83,3 +83,7 @@ curl -X POST http://localhost:8888/mcp \
 - Demo uses fixed user ID: `550e8400-e29b-41d4-a716-446655440001`
 - Elicitation workaround: Use two-step tool process
 - Production needs: Auth, RLS policies, rate limiting
+
+## Memory
+
+- The .env file exists; check first before asking about secrets

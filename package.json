@@ -9,9 +9,22 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "test": "vitest run",
+    
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
     "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/database.ts",
+    "db:types:local": "supabase gen types typescript --local > src/types/database.ts",
     "db:migrate": "supabase db push",
-    "db:reset": "supabase db reset"
+    "db:migrate:local": "supabase migration up",
+    "db:reset": "supabase db reset",
+    "db:seed": "supabase db reset --debug",
+    "db:diff": "supabase db diff",
+    "db:dump": "supabase db dump --data-only > backup.sql",
+    "db:link": "supabase link --project-ref $SUPABASE_PROJECT_ID",
+    
+    "setup": "npm install && supabase start && npm run db:types:local",
+    "setup:prod": "npm install && npm run db:link && npm run db:types"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
