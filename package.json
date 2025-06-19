@@ -5,6 +5,7 @@
   "description": "Banking demo using Model Context Protocol (MCP) with Supabase and Netlify Edge Functions",
   "scripts": {
     "dev": "netlify dev",
+    "mcp-proxy": "node mcp-proxy.js",
     "db:migrate": "supabase db push",
     "db:reset": "supabase db reset --debug",
     "db:link": "supabase link --project-ref $SUPABASE_PROJECT_ID"
@@ -12,5 +13,8 @@
   "devDependencies": {
     "netlify-cli": "^17.0.0",
     "supabase": "^1.150.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
   }
 }

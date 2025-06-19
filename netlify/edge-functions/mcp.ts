@@ -432,28 +432,158 @@ const transport = new NetlifyMCPTransport();
 // Connect the server to our custom transport
 server.connect(transport as any);
 
+// CORS headers for remote MCP server
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization, Mcp-Session-Id",
+  "Access-Control-Expose-Headers": "Mcp-Session-Id",
+};
+
+// Session management
+const sessions = new Map<string, { created: number; data: any }>();
+
+function getOrCreateSession(request: Request): string {
+  const sessionId = request.headers.get("Mcp-Session-Id") || crypto.randomUUID();
+  
+  if (!sessions.has(sessionId)) {
+    sessions.set(sessionId, {
+      created: Date.now(),
+      data: {}
+    });
+  }
+  
+  return sessionId;
+}
+
+// OAuth 2.1 metadata endpoint
+async function handleOAuthMetadata(): Promise<Response> {
+  const metadata = {
+    issuer: "https://penguin-bank-cloud.netlify.app",
+    authorization_endpoint: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/auth",
+    token_endpoint: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/token",
+    registration_endpoint: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/register",
+    response_types_supported: ["code"],
+    grant_types_supported: ["authorization_code"],
+    code_challenge_methods_supported: ["S256"],
+    token_endpoint_auth_methods_supported: ["none"],
+  };
+
+  return new Response(JSON.stringify(metadata), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      ...corsHeaders,
+    },
+  });
+}
+
+// Handle OAuth endpoints
+async function handleOAuthEndpoints(request: Request, pathname: string): Promise<Response> {
+  if (pathname === "/.well-known/oauth-authorization-server") {
+    return handleOAuthMetadata();
+  }
+  
+  if (pathname.startsWith("/.netlify/edge-functions/mcp/auth")) {
+    // Simple auth endpoint - in production, implement proper OAuth flow
+    const url = new URL(request.url);
+    const redirectUri = url.searchParams.get("redirect_uri");
+    const state = url.searchParams.get("state");
+    const codeChallenge = url.searchParams.get("code_challenge");
+    
+    if (!redirectUri || !state) {
+      return new Response("Missing required parameters", { status: 400 });
+    }
+    
+    // Generate auth code
+    const authCode = crypto.randomUUID();
+    
+    // Store code challenge for verification (in production, use proper storage)
+    if (codeChallenge) {
+      sessions.set(authCode, { created: Date.now(), data: { codeChallenge } });
+    }
+    
+    const redirectUrl = new URL(redirectUri);
+    redirectUrl.searchParams.set("code", authCode);
+    redirectUrl.searchParams.set("state", state);
+    
+    return Response.redirect(redirectUrl.toString(), 302);
+  }
+  
+  if (pathname.startsWith("/.netlify/edge-functions/mcp/token")) {
+    // Token exchange endpoint
+    const formData = await request.formData();
+    const code = formData.get("code");
+    const codeVerifier = formData.get("code_verifier");
+    
+    if (!code) {
+      return new Response(JSON.stringify({ error: "invalid_request" }), { 
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
+    
+    // In production, verify code challenge
+    const token = {
+      access_token: crypto.randomUUID(),
+      token_type: "Bearer",
+      expires_in: 3600,
+    };
+    
+    return new Response(JSON.stringify(token), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+  
+  if (pathname.startsWith("/.netlify/edge-functions/mcp/register")) {
+    // Dynamic Client Registration
+    const registration = {
+      client_id: crypto.randomUUID(),
+      client_secret: crypto.randomUUID(),
+      registration_access_token: crypto.randomUUID(),
+      registration_client_uri: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/register",
+    };
+    
+    return new Response(JSON.stringify(registration), {
+      status: 201,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+  
+  return new Response("Not Found", { status: 404 });
+}
+
 // Netlify Edge Function Handler
 export default async (request: Request): Promise<Response> => {
-  // Handle CORS
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  
+  // Handle OAuth endpoints
+  if (pathname.includes("auth") || pathname.includes("token") || pathname.includes("register") || pathname.includes(".well-known")) {
+    return handleOAuthEndpoints(request, pathname);
+  }
+  
+  // Handle CORS preflight
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
+      headers: corsHeaders,
     });
   }
 
   if (request.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { 
+      status: 405,
+      headers: corsHeaders,
+    });
   }
 
   try {
     const mcpRequest = await request.json();
+    const sessionId = getOrCreateSession(request);
     
-    // Handle initialization
+    // Handle initialization with session
     if (mcpRequest.method === "initialize") {
       return new Response(JSON.stringify({
         jsonrpc: "2.0",
@@ -461,18 +591,23 @@ export default async (request: Request): Promise<Response> => {
           protocolVersion: "2024-11-05",
           capabilities: {
             tools: {},
+            resources: {},
+            prompts: {},
           },
           serverInfo: {
             name: "penguin-bank",
             version: "1.0.0",
+            description: "Penguin Bank MCP Server with full banking functionality",
           },
+          instructions: "This server provides banking tools for account management, transactions, bills, and payments.",
         },
         id: mcpRequest.id,
       }), {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          "Mcp-Session-Id": sessionId,
+          ...corsHeaders,
         },
       });
     }
@@ -492,7 +627,8 @@ export default async (request: Request): Promise<Response> => {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          "Mcp-Session-Id": sessionId,
+          ...corsHeaders,
         },
       });
     }
@@ -511,8 +647,9 @@ export default async (request: Request): Promise<Response> => {
       }), {
         status: 200,
         headers: {
-          "Content-Type": "application/json", 
-          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json",
+          "Mcp-Session-Id": sessionId,
+          ...corsHeaders,
         },
       });
     }
@@ -529,7 +666,7 @@ export default async (request: Request): Promise<Response> => {
       status: 400,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        ...corsHeaders,
       },
     });
 
@@ -545,7 +682,7 @@ export default async (request: Request): Promise<Response> => {
       status: 400,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        ...corsHeaders,
       },
     });
   }
