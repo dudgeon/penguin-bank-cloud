@@ -8,5 +8,5 @@
   port = 8888
 
 [[edge_functions]]
-  function = "test"
+  function = "mcp-simple"
   path = "/mcp"

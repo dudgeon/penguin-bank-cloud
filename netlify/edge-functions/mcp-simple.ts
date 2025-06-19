@@ -254,7 +254,7 @@ async function processPayment(payee: string, amount: number, account_type: strin
     throw new Error(`Payment amount $${amount.toFixed(2)} is less than minimum payment $${bill.minimum_payment.toFixed(2)}`);
   }
 
-  const confirmation_number = `PB${crypto.randomUUID().replace(/-/g, '').substr(0, 12)}`;
+  const confirmation_number = `PB${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`;
   const new_balance = account.balance - amount;
 
   try {
