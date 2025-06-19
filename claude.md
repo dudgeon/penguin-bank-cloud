@@ -87,3 +87,4 @@ curl -X POST http://localhost:8888/mcp \
 ## Memory
 
 - The .env file exists; check first before asking about secrets
+- Always check the status of an action (e.g. starting a web server, a github action completing successfully, a deploy/build completing successfully) prior to telling the user that it 'should work'
