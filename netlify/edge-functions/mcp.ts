@@ -1,33 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-// MCP Protocol Types
-interface MCPRequest {
-  jsonrpc: "2.0";
-  method: string;
-  params?: any;
-  id?: string | number;
-}
-
-interface MCPResponse {
-  jsonrpc: "2.0";
-  result?: any;
-  error?: {
-    code: number;
-    message: string;
-    data?: any;
-  };
-  id?: string | number;
-}
-
-interface Tool {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: "object";
-    properties: Record<string, any>;
-    required?: string[];
-  };
-}
+import { Server } from "https://esm.sh/@modelcontextprotocol/sdk@1.0.0/server/index.js";
+import { StdioServerTransport } from "https://esm.sh/@modelcontextprotocol/sdk@1.0.0/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ErrorCode,
+  McpError,
+} from "https://esm.sh/@modelcontextprotocol/sdk@1.0.0/types.js";
 
 // Supabase client - initialize on first use to avoid bundling issues
 let supabase: any = null;
@@ -49,113 +28,187 @@ function getSupabaseClient() {
 // Demo user ID
 const DEMO_USER_ID = "550e8400-e29b-41d4-a716-446655440001";
 
-// MCP Tools Definition
-const TOOLS: Tool[] = [
+// Create MCP Server instance
+const server = new Server(
   {
-    name: "hello_world",
-    description: "Simple hello world test and company values inquiry",
-    inputSchema: {
-      type: "object",
-      properties: {
-        question: {
-          type: "string",
-          description: "Question to ask about the bank",
-        },
-      },
-    },
+    name: "penguin-bank",
+    version: "1.0.0",
   },
   {
-    name: "hello_penguin",
-    description: "Welcome message for Penguin Bank",
-    inputSchema: {
-      type: "object",
-      properties: {},
+    capabilities: {
+      tools: {},
     },
-  },
-  {
-    name: "get_balance",
-    description: "Get account balances for checking and savings accounts",
-    inputSchema: {
-      type: "object",
-      properties: {},
-    },
-  },
-  {
-    name: "get_recent_transactions",
-    description: "Get recent transactions for an account",
-    inputSchema: {
-      type: "object",
-      properties: {
-        account_type: {
-          type: "string",
-          enum: ["checking", "savings"],
-          description: "Type of account to get transactions for",
-        },
-        limit: {
-          type: "number",
-          description: "Number of transactions to retrieve (default: 10)",
-          minimum: 1,
-          maximum: 50,
-        },
-      },
-    },
-  },
-  {
-    name: "show_bill",
-    description: "Display details for a specific bill",
-    inputSchema: {
-      type: "object",
-      properties: {
-        payee: {
-          type: "string",
-          description: "Name of the payee to show bill details for",
-        },
-      },
-      required: ["payee"],
-    },
-  },
-  {
-    name: "process_payment",
-    description: "Process a bill payment",
-    inputSchema: {
-      type: "object",
-      properties: {
-        payee: {
-          type: "string",
-          description: "Name of the payee to pay",
-        },
-        amount: {
-          type: "number",
-          description: "Amount to pay",
-          minimum: 0.01,
-        },
-        account_type: {
-          type: "string",
-          enum: ["checking", "savings"],
-          description: "Account to pay from",
-        },
-      },
-      required: ["payee", "amount", "account_type"],
-    },
-  },
-];
-
-// Tool Implementations
-async function helloWorld(question?: string): Promise<string> {
-  if (question && question.toLowerCase().includes("values of penguin bank")) {
-    return "Excellence and do the right thing";
   }
-  return "Hello World! 🐧 This is a test from Penguin Bank MCP Server. Ask me about the values of Penguin Bank!";
-}
+);
 
-async function helloPenguin(): Promise<string> {
-  return "🐧 Welcome to Penguin Bank! I'm your AI banking assistant. I can help you:\n\n" +
-    "• Check account balances\n" +
-    "• View recent transactions\n" +
-    "• Show bill details\n" +
-    "• Process bill payments\n\n" +
-    "How can I help you today?";
-}
+// Register MCP Tools
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "hello_penguin",
+        description: "Welcome message for Penguin Bank",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
+      {
+        name: "get_balance",
+        description: "Get account balances for checking and savings accounts",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
+      {
+        name: "get_recent_transactions",
+        description: "Get recent transactions for an account",
+        inputSchema: {
+          type: "object",
+          properties: {
+            account_type: {
+              type: "string",
+              enum: ["checking", "savings"],
+              description: "Type of account to get transactions for",
+            },
+            limit: {
+              type: "number",
+              description: "Number of transactions to retrieve (default: 10)",
+              minimum: 1,
+              maximum: 50,
+            },
+          },
+        },
+      },
+      {
+        name: "show_bill",
+        description: "Display details for a specific bill",
+        inputSchema: {
+          type: "object",
+          properties: {
+            payee: {
+              type: "string",
+              description: "Name of the payee to show bill details for",
+            },
+          },
+          required: ["payee"],
+        },
+      },
+      {
+        name: "process_payment",
+        description: "Process a bill payment",
+        inputSchema: {
+          type: "object",
+          properties: {
+            payee: {
+              type: "string",
+              description: "Name of the payee to pay",
+            },
+            amount: {
+              type: "number",
+              description: "Amount to pay",
+              minimum: 0.01,
+            },
+            account_type: {
+              type: "string",
+              enum: ["checking", "savings"],
+              description: "Account to pay from",
+            },
+          },
+          required: ["payee", "amount", "account_type"],
+        },
+      },
+    ],
+  };
+});
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  try {
+    switch (name) {
+      case "hello_penguin":
+        return {
+          content: [
+            {
+              type: "text",
+              text: "🐧 Welcome to Penguin Bank! I'm your AI banking assistant. I can help you:\n\n" +
+                "• Check account balances\n" +
+                "• View recent transactions\n" +
+                "• Show bill details\n" +
+                "• Process bill payments\n\n" +
+                "How can I help you today?",
+            },
+          ],
+        };
+
+      case "get_balance":
+        const balanceResult = await getBalance();
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(balanceResult, null, 2),
+            },
+          ],
+        };
+
+      case "get_recent_transactions":
+        const transactionsResult = await getRecentTransactions(
+          args?.account_type,
+          args?.limit
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(transactionsResult, null, 2),
+            },
+          ],
+        };
+
+      case "show_bill":
+        const billResult = await showBill(args?.payee);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(billResult, null, 2),
+            },
+          ],
+        };
+
+      case "process_payment":
+        const paymentResult = await processPayment(
+          args?.payee,
+          args?.amount,
+          args?.account_type
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(paymentResult, null, 2),
+            },
+          ],
+        };
+
+      default:
+        throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+    }
+  } catch (error) {
+    if (error instanceof McpError) {
+      throw error;
+    }
+    throw new McpError(
+      ErrorCode.InternalError,
+      `Tool execution failed: ${error.message}`
+    );
+  }
+});
+
+// Tool Implementation Functions
 
 async function getBalance() {
   const { data: accounts, error } = await getSupabaseClient()
@@ -358,83 +411,26 @@ async function processPayment(payee: string, amount: number, account_type: strin
   }
 }
 
-// Main MCP Handler
-async function handleMCPRequest(request: MCPRequest): Promise<MCPResponse> {
-  const { method, params, id } = request;
+// Custom transport for Netlify Edge Functions
+class NetlifyMCPTransport {
+  private _requestHandler: ((request: any) => Promise<any>) | null = null;
 
-  try {
-    switch (method) {
-      case "initialize":
-        return {
-          jsonrpc: "2.0",
-          result: {
-            protocolVersion: "2025-06-18",
-            capabilities: {
-              tools: {},
-            },
-            serverInfo: {
-              name: "penguin-bank",
-              version: "1.0.0",
-            },
-          },
-          id,
-        };
+  setRequestHandler(handler: (request: any) => Promise<any>) {
+    this._requestHandler = handler;
+  }
 
-      case "tools/list":
-        return {
-          jsonrpc: "2.0",
-          result: { tools: TOOLS },
-          id,
-        };
-
-      case "tools/call":
-        const { name, arguments: args } = params;
-        let result;
-
-        switch (name) {
-          case "hello_world":
-            result = await helloWorld(args?.question);
-            break;
-          case "hello_penguin":
-            result = await helloPenguin();
-            break;
-          case "get_balance":
-            result = await getBalance();
-            break;
-          case "get_recent_transactions":
-            result = await getRecentTransactions(args?.account_type, args?.limit);
-            break;
-          case "show_bill":
-            result = await showBill(args?.payee);
-            break;
-          case "process_payment":
-            result = await processPayment(args?.payee, args?.amount, args?.account_type);
-            break;
-          default:
-            throw new Error(`Unknown tool: ${name}`);
-        }
-
-        return {
-          jsonrpc: "2.0",
-          result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] },
-          id,
-        };
-
-      default:
-        throw new Error(`Unsupported method: ${method}`);
+  async handleRequest(request: any): Promise<any> {
+    if (!this._requestHandler) {
+      throw new Error("No request handler set");
     }
-  } catch (error) {
-    return {
-      jsonrpc: "2.0",
-      error: {
-        code: -32603,
-        message: error.message,
-        data: { method, params },
-      },
-      id,
-    };
+    return await this._requestHandler(request);
   }
 }
+
+const transport = new NetlifyMCPTransport();
+
+// Connect the server to our custom transport
+server.connect(transport as any);
 
 // Netlify Edge Function Handler
 export default async (request: Request): Promise<Response> => {
@@ -455,27 +451,97 @@ export default async (request: Request): Promise<Response> => {
   }
 
   try {
-    const mcpRequest: MCPRequest = await request.json();
-    const mcpResponse = await handleMCPRequest(mcpRequest);
+    const mcpRequest = await request.json();
+    
+    // Handle initialization
+    if (mcpRequest.method === "initialize") {
+      return new Response(JSON.stringify({
+        jsonrpc: "2.0",
+        result: {
+          protocolVersion: "2024-11-05",
+          capabilities: {
+            tools: {},
+          },
+          serverInfo: {
+            name: "penguin-bank",
+            version: "1.0.0",
+          },
+        },
+        id: mcpRequest.id,
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
 
-    return new Response(JSON.stringify(mcpResponse), {
-      status: 200,
+    // Handle tool list request
+    if (mcpRequest.method === "tools/list") {
+      const toolsResponse = await server.handleRequest({
+        method: "tools/list",
+        params: mcpRequest.params || {},
+      });
+      
+      return new Response(JSON.stringify({
+        jsonrpc: "2.0",
+        result: toolsResponse,
+        id: mcpRequest.id,
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    // Handle tool call request
+    if (mcpRequest.method === "tools/call") {
+      const callResponse = await server.handleRequest({
+        method: "tools/call", 
+        params: mcpRequest.params,
+      });
+
+      return new Response(JSON.stringify({
+        jsonrpc: "2.0",
+        result: callResponse,
+        id: mcpRequest.id,
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json", 
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    // Unknown method
+    return new Response(JSON.stringify({
+      jsonrpc: "2.0",
+      error: {
+        code: -32601,
+        message: `Method not found: ${mcpRequest.method}`,
+      },
+      id: mcpRequest.id,
+    }), {
+      status: 400,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
     });
+
   } catch (error) {
-    const errorResponse: MCPResponse = {
+    return new Response(JSON.stringify({
       jsonrpc: "2.0",
       error: {
         code: -32700,
         message: "Parse error",
         data: error.message,
       },
-    };
-
-    return new Response(JSON.stringify(errorResponse), {
+    }), {
       status: 400,
       headers: {
         "Content-Type": "application/json",
