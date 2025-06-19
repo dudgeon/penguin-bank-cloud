@@ -8,12 +8,16 @@
   port = 8888
 
 [[edge_functions]]
-  function = "mcp-simple"
+  function = "mcp-basic"
   path = "/mcp"
 
 [[edge_functions]]
   function = "hello"
   path = "/hello"
+
+[[edge_functions]]
+  function = "hello"
+  path = "/test"
 
 # Subdomain redirect for mcp.penguinbank.cloud
 [[redirects]]
