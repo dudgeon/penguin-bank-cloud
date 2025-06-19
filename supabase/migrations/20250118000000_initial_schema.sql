@@ -3,7 +3,6 @@
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_crypto";
 
 -- =====================================================
 -- USERS TABLE
@@ -61,7 +60,7 @@ CREATE TABLE transactions (
   category TEXT,
   description TEXT NOT NULL,
   balance_after DECIMAL(12,2) NOT NULL,
-  reference_number TEXT UNIQUE DEFAULT encode(gen_random_bytes(8), 'hex'),
+  reference_number TEXT UNIQUE DEFAULT 'TXN' || replace(gen_random_uuid()::text, '-', ''),
   status TEXT DEFAULT 'completed',
   metadata JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -108,7 +107,7 @@ CREATE TABLE payment_history (
   account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   amount DECIMAL(12,2) NOT NULL,
   payment_type TEXT NOT NULL,
-  confirmation_number TEXT UNIQUE NOT NULL DEFAULT 'PB' || encode(gen_random_bytes(6), 'hex'),
+  confirmation_number TEXT UNIQUE NOT NULL DEFAULT 'PB' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 12),
   status TEXT DEFAULT 'completed',
   scheduled_date DATE,
   processed_date TIMESTAMPTZ DEFAULT NOW(),
@@ -119,7 +118,7 @@ CREATE TABLE payment_history (
   CONSTRAINT payment_amount_positive CHECK (amount > 0),
   CONSTRAINT payment_type_check CHECK (payment_type IN ('one_time', 'autopay', 'scheduled')),
   CONSTRAINT payment_status_check CHECK (status IN ('pending', 'completed', 'failed', 'cancelled')),
-  CONSTRAINT payment_confirmation_format CHECK (confirmation_number ~ '^PB[a-f0-9]{12}$')
+  CONSTRAINT payment_confirmation_format CHECK (confirmation_number ~ '^PB[a-f0-9A-F]{12}$')
 );
 
 -- =====================================================

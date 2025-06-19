@@ -170,7 +170,7 @@ SELECT
   'completed',
   NOW() - INTERVAL (FLOOR(RANDOM() * 30) + 30) || ' days',
   'Previous month payment',
-  'PB' || encode(gen_random_bytes(6), 'hex')
+  'PB' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)
 FROM account_data
 WHERE payee IN ('Polar Electric Company', 'Blizzard Internet & Cable', 'Ice Shield Auto Insurance', 'Netflix Streaming', 'Penguin Fitness Club')
 LIMIT 10;
@@ -196,5 +196,5 @@ SELECT
   'completed',
   NOW() - INTERVAL '35 days',
   'Previous month water bill',
-  'PBc4f8a2d9e1b7'
+  'PB' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)
 FROM checking_account, water_bill;
