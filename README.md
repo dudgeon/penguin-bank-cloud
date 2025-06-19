@@ -106,6 +106,8 @@ The project auto-deploys via GitHub Actions:
 3. **Database migrations** run automatically
 4. **Type checking** and tests must pass
 
+Build Status: ![Deploy](https://github.com/dudgeon/penguin-bank-cloud/actions/workflows/deploy.yml/badge.svg)
+
 ### Required GitHub Secrets
 
 - `SUPABASE_ACCESS_TOKEN`
