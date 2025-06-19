@@ -29,11 +29,22 @@ interface Tool {
   };
 }
 
-// Supabase client
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
+// Supabase client - initialize on first use to avoid bundling issues
+let supabase: any = null;
+
+function getSupabaseClient() {
+  if (!supabase) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing required Supabase environment variables");
+    }
+    
+    supabase = createClient(supabaseUrl, supabaseKey);
+  }
+  return supabase;
+}
 
 // Demo user ID
 const DEMO_USER_ID = "550e8400-e29b-41d4-a716-446655440001";
@@ -127,7 +138,7 @@ async function helloPenguin(): Promise<string> {
 }
 
 async function getBalance() {
-  const { data: accounts, error } = await supabase
+  const { data: accounts, error } = await getSupabaseClient()
     .from("accounts")
     .select("account_type, account_number, balance, available_balance")
     .eq("user_id", DEMO_USER_ID);
@@ -152,7 +163,7 @@ async function getBalance() {
 
 async function getRecentTransactions(account_type = "checking", limit = 10) {
   // Get account ID
-  const { data: accounts, error: accountError } = await supabase
+  const { data: accounts, error: accountError } = await getSupabaseClient()
     .from("accounts")
     .select("id")
     .eq("user_id", DEMO_USER_ID)
@@ -164,7 +175,7 @@ async function getRecentTransactions(account_type = "checking", limit = 10) {
   }
 
   // Get transactions
-  const { data: transactions, error } = await supabase
+  const { data: transactions, error } = await getSupabaseClient()
     .from("transactions")
     .select("*")
     .eq("account_id", accounts.id)
@@ -190,7 +201,7 @@ async function getRecentTransactions(account_type = "checking", limit = 10) {
 }
 
 async function showBill(payee: string) {
-  const { data: bills, error } = await supabase
+  const { data: bills, error } = await getSupabaseClient()
     .from("bills")
     .select("*")
     .eq("user_id", DEMO_USER_ID)
@@ -202,7 +213,7 @@ async function showBill(payee: string) {
 
   if (!bills || bills.length === 0) {
     // Get all bills as suggestions
-    const { data: allBills } = await supabase
+    const { data: allBills } = await getSupabaseClient()
       .from("bills")
       .select("payee")
       .eq("user_id", DEMO_USER_ID);
@@ -227,7 +238,7 @@ async function showBill(payee: string) {
 
 async function processPayment(payee: string, amount: number, account_type: string) {
   // Get account
-  const { data: account, error: accountError } = await supabase
+  const { data: account, error: accountError } = await getSupabaseClient()
     .from("accounts")
     .select("id, balance")
     .eq("user_id", DEMO_USER_ID)
@@ -244,7 +255,7 @@ async function processPayment(payee: string, amount: number, account_type: strin
   }
 
   // Get bill
-  const { data: bill, error: billError } = await supabase
+  const { data: bill, error: billError } = await getSupabaseClient()
     .from("bills")
     .select("id, statement_balance, minimum_payment")
     .eq("user_id", DEMO_USER_ID)
@@ -269,7 +280,7 @@ async function processPayment(payee: string, amount: number, account_type: strin
 
   try {
     // Start transaction
-    const { error: paymentError } = await supabase
+    const { error: paymentError } = await getSupabaseClient()
       .from("payment_history")
       .insert({
         bill_id: bill.id,
@@ -285,7 +296,7 @@ async function processPayment(payee: string, amount: number, account_type: strin
     }
 
     // Update account balance
-    const { error: balanceError } = await supabase
+    const { error: balanceError } = await getSupabaseClient()
       .from("accounts")
       .update({ balance: new_balance, available_balance: new_balance })
       .eq("id", account.id);
@@ -295,7 +306,7 @@ async function processPayment(payee: string, amount: number, account_type: strin
     }
 
     // Add transaction record
-    const { error: txError } = await supabase
+    const { error: txError } = await getSupabaseClient()
       .from("transactions")
       .insert({
         account_id: account.id,
