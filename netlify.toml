@@ -8,21 +8,5 @@
   port = 8888
 
 [[edge_functions]]
-  function = "mcp"
+  function = "mcp-simple"
   path = "/mcp"
-
-[[edge_functions]]
-  function = "mcp"
-  path = "/.well-known/oauth-authorization-server"
-
-[[edge_functions]]
-  function = "mcp"
-  path = "/auth"
-
-[[edge_functions]]
-  function = "mcp"
-  path = "/token"
-
-[[edge_functions]]
-  function = "mcp"
-  path = "/register"
