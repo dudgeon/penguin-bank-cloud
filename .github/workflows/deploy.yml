@@ -34,36 +34,37 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-  # Deploy edge functions to Netlify
+  # Deploy to Netlify using CLI
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli
+      
       - name: Deploy to Netlify (Preview)
         if: github.event_name == 'pull_request'
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './public'
-          functions-dir: './netlify/edge-functions'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from PR #${{ github.event.pull_request.number }}"
-          enable-pull-request-comment: true
-          enable-commit-comment: false
-          overwrites-pull-request-comment: true
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          netlify deploy \
+            --dir=./public \
+            --functions=./netlify/functions \
+            --edge-functions=./netlify/edge-functions \
+            --site=${{ secrets.NETLIFY_SITE_ID }} \
+            --auth=${{ secrets.NETLIFY_AUTH_TOKEN }}
       
       - name: Deploy to Netlify (Production)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './public'
-          functions-dir: './netlify/edge-functions'
-          production-deploy: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Production deploy ${{ github.sha }}"
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          netlify deploy \
+            --dir=./public \
+            --functions=./netlify/functions \
+            --edge-functions=./netlify/edge-functions \
+            --prod \
+            --site=${{ secrets.NETLIFY_SITE_ID }} \
+            --auth=${{ secrets.NETLIFY_AUTH_TOKEN }}
