@@ -459,10 +459,10 @@ function getOrCreateSession(request: Request): string {
 // OAuth 2.1 metadata endpoint
 async function handleOAuthMetadata(): Promise<Response> {
   const metadata = {
-    issuer: "https://penguin-bank-cloud.netlify.app",
-    authorization_endpoint: "https://penguin-bank-cloud.netlify.app/auth",
-    token_endpoint: "https://penguin-bank-cloud.netlify.app/token",
-    registration_endpoint: "https://penguin-bank-cloud.netlify.app/register",
+    issuer: "https://mcp.penguinbank.cloud",
+    authorization_endpoint: "https://mcp.penguinbank.cloud/auth",
+    token_endpoint: "https://mcp.penguinbank.cloud/token",
+    registration_endpoint: "https://mcp.penguinbank.cloud/register",
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code"],
     code_challenge_methods_supported: ["S256"],
@@ -546,7 +546,7 @@ async function handleOAuthEndpoints(request: Request, pathname: string): Promise
       client_id: crypto.randomUUID(),
       client_secret: crypto.randomUUID(),
       registration_access_token: crypto.randomUUID(),
-      registration_client_uri: "https://penguin-bank-cloud.netlify.app/register",
+      registration_client_uri: "https://mcp.penguinbank.cloud/register",
     };
     
     return new Response(JSON.stringify(registration), {

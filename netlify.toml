@@ -10,3 +10,16 @@
 [[edge_functions]]
   function = "mcp-simple"
   path = "/mcp"
+
+# Subdomain redirect for mcp.penguinbank.cloud
+[[redirects]]
+  from = "https://mcp.penguinbank.cloud/*"
+  to = "https://penguinbank.cloud/mcp"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "http://mcp.penguinbank.cloud/*"
+  to = "https://penguinbank.cloud/mcp"
+  status = 301
+  force = true
