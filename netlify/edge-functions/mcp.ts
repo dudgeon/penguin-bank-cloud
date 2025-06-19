@@ -460,13 +460,14 @@ function getOrCreateSession(request: Request): string {
 async function handleOAuthMetadata(): Promise<Response> {
   const metadata = {
     issuer: "https://penguin-bank-cloud.netlify.app",
-    authorization_endpoint: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/auth",
-    token_endpoint: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/token",
-    registration_endpoint: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/register",
+    authorization_endpoint: "https://penguin-bank-cloud.netlify.app/auth",
+    token_endpoint: "https://penguin-bank-cloud.netlify.app/token",
+    registration_endpoint: "https://penguin-bank-cloud.netlify.app/register",
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code"],
     code_challenge_methods_supported: ["S256"],
     token_endpoint_auth_methods_supported: ["none"],
+    scopes_supported: ["read", "write"],
   };
 
   return new Response(JSON.stringify(metadata), {
@@ -484,15 +485,18 @@ async function handleOAuthEndpoints(request: Request, pathname: string): Promise
     return handleOAuthMetadata();
   }
   
-  if (pathname.startsWith("/.netlify/edge-functions/mcp/auth")) {
-    // Simple auth endpoint - in production, implement proper OAuth flow
+  if (pathname === "/auth") {
+    // Authorization endpoint - in production, implement proper OAuth flow
     const url = new URL(request.url);
     const redirectUri = url.searchParams.get("redirect_uri");
     const state = url.searchParams.get("state");
     const codeChallenge = url.searchParams.get("code_challenge");
     
     if (!redirectUri || !state) {
-      return new Response("Missing required parameters", { status: 400 });
+      return new Response("Missing required parameters", { 
+        status: 400,
+        headers: corsHeaders,
+      });
     }
     
     // Generate auth code
@@ -510,7 +514,7 @@ async function handleOAuthEndpoints(request: Request, pathname: string): Promise
     return Response.redirect(redirectUrl.toString(), 302);
   }
   
-  if (pathname.startsWith("/.netlify/edge-functions/mcp/token")) {
+  if (pathname === "/token") {
     // Token exchange endpoint
     const formData = await request.formData();
     const code = formData.get("code");
@@ -536,13 +540,13 @@ async function handleOAuthEndpoints(request: Request, pathname: string): Promise
     });
   }
   
-  if (pathname.startsWith("/.netlify/edge-functions/mcp/register")) {
+  if (pathname === "/register") {
     // Dynamic Client Registration
     const registration = {
       client_id: crypto.randomUUID(),
       client_secret: crypto.randomUUID(),
       registration_access_token: crypto.randomUUID(),
-      registration_client_uri: "https://penguin-bank-cloud.netlify.app/.netlify/edge-functions/mcp/register",
+      registration_client_uri: "https://penguin-bank-cloud.netlify.app/register",
     };
     
     return new Response(JSON.stringify(registration), {
@@ -551,7 +555,10 @@ async function handleOAuthEndpoints(request: Request, pathname: string): Promise
     });
   }
   
-  return new Response("Not Found", { status: 404 });
+  return new Response("Not Found", { 
+    status: 404,
+    headers: corsHeaders,
+  });
 }
 
 // Netlify Edge Function Handler
