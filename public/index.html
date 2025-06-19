@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penguin Bank - MCP Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .penguin {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .features {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .features h2 {
+            color: #667eea;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .feature {
+            padding: 1rem;
+            border-left: 4px solid #667eea;
+            background: #f8f9ff;
+        }
+        
+        .feature h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #48bb78;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="penguin">🐧</div>
+            <h1>Penguin Bank</h1>
+            <p>Model Context Protocol Server with Real Data Persistence</p>
+            <div class="status">Live & Ready</div>
+        </div>
+        
+        <div class="cards">
+            <div class="card">
+                <h3>🏦 Real Banking Operations</h3>
+                <p>Experience authentic banking interactions with account balances, transaction history, and bill payments. All data is persisted in a real Supabase PostgreSQL database.</p>
+            </div>
+            
+            <div class="card">
+                <h3>🤖 MCP Compatible</h3>
+                <p>Fully compatible with Claude Desktop and other MCP clients. Uses the latest Model Context Protocol specification for seamless AI integration.</p>
+            </div>
+            
+            <div class="card">
+                <h3>⚡ Edge Deployed</h3>
+                <p>Deployed on Netlify Edge Functions for global performance. Automated CI/CD pipeline with database migrations and type safety.</p>
+            </div>
+        </div>
+        
+        <div class="features">
+            <h2>Available Banking Tools</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h4>hello_penguin</h4>
+                    <p>Get a warm welcome from your banking assistant</p>
+                </div>
+                <div class="feature">
+                    <h4>get_balance</h4>
+                    <p>Check real-time account balances from the database</p>
+                </div>
+                <div class="feature">
+                    <h4>get_recent_transactions</h4>
+                    <p>View categorized transaction history</p>
+                </div>
+                <div class="feature">
+                    <h4>show_bill</h4>
+                    <p>Display detailed bill information</p>
+                </div>
+                <div class="feature">
+                    <h4>process_payment</h4>
+                    <p>Pay bills with interactive payment options</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 2rem;">
+            <h3>🚀 Get Started</h3>
+            <p>Add Penguin Bank to your Claude Desktop configuration:</p>
+            <div class="code-block">{
+  "mcpServers": {
+    "penguin-bank": {
+      "url": "https://mcp.penguinbank.cloud",
+      "transport": "http"
+    }
+  }
+}</div>
+            <p>Then restart Claude Desktop and start banking with AI! 🎉</p>
+        </div>
+        
+        <div class="footer">
+            <p>Built with ❤️ using TypeScript, Supabase, and Netlify Edge Functions</p>
+            <p><a href="https://github.com/your-repo/penguin-bank-cloud" style="color: white;">View Source Code</a></p>
+        </div>
+    </div>
+</body>
+</html>

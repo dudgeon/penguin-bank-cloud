@@ -1,0 +1,30 @@
+{
+  "name": "penguin-bank-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Banking demo using Model Context Protocol (MCP) with real data persistence",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "test": "vitest run",
+    "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/database.ts",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "supabase": "^1.150.0",
+    "netlify-cli": "^17.0.0"
+  }
+}

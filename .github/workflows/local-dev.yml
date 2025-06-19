@@ -1,0 +1,18 @@
+name: Local Development Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instructions
+        run: |
+          echo "Local Development Setup:"
+          echo "1. Install Supabase CLI: npm install -g supabase"
+          echo "2. Login: supabase login"
+          echo "3. Link project: supabase link --project-ref $SUPABASE_PROJECT_ID"
+          echo "4. Start local: supabase start"
+          echo "5. Run migrations: supabase db reset"
+          echo "6. Start Netlify dev: netlify dev"
