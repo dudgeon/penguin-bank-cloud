@@ -7,17 +7,14 @@
 [dev]
   port = 8888
 
-[[edge_functions]]
-  function = "mcp-basic"
-  path = "/mcp"
+[functions]
+  directory = "netlify/functions"
 
-[[edge_functions]]
-  function = "hello"
-  path = "/hello"
-
-[[edge_functions]]
-  function = "hello"
-  path = "/test"
+# Regular function redirect
+[[redirects]]
+  from = "/mcp"
+  to = "/.netlify/functions/mcp"
+  status = 200
 
 # Subdomain redirect for mcp.penguinbank.cloud
 [[redirects]]
