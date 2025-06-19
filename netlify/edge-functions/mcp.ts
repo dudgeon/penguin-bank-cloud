@@ -566,8 +566,8 @@ export default async (request: Request): Promise<Response> => {
   const url = new URL(request.url);
   const pathname = url.pathname;
   
-  // Handle OAuth endpoints
-  if (pathname.includes("auth") || pathname.includes("token") || pathname.includes("register") || pathname.includes(".well-known")) {
+  // Handle OAuth endpoints - only if not the main MCP endpoint
+  if (pathname !== "/mcp" && (pathname.includes("auth") || pathname.includes("token") || pathname.includes("register") || pathname.includes(".well-known"))) {
     return handleOAuthEndpoints(request, pathname);
   }
   
@@ -589,6 +589,8 @@ export default async (request: Request): Promise<Response> => {
   try {
     const mcpRequest = await request.json();
     const sessionId = getOrCreateSession(request);
+    
+    console.log("MCP Request:", JSON.stringify(mcpRequest, null, 2));
     
     // Handle initialization with session
     if (mcpRequest.method === "initialize") {
@@ -678,6 +680,7 @@ export default async (request: Request): Promise<Response> => {
     });
 
   } catch (error) {
+    console.error("MCP Error:", error);
     return new Response(JSON.stringify({
       jsonrpc: "2.0",
       error: {
