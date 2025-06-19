@@ -10,10 +10,10 @@
 [functions]
   directory = "netlify/functions"
 
-# Regular function redirect
+# Regular function redirect (SSE-capable)
 [[redirects]]
   from = "/mcp"
-  to = "/.netlify/functions/mcp"
+  to = "/.netlify/functions/mcp-sse"
   status = 200
 
 # Subdomain redirect for mcp.penguinbank.cloud
