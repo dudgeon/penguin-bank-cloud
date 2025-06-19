@@ -52,6 +52,19 @@ const DEMO_USER_ID = "550e8400-e29b-41d4-a716-446655440001";
 // MCP Tools Definition
 const TOOLS: Tool[] = [
   {
+    name: "hello_world",
+    description: "Simple hello world test and company values inquiry",
+    inputSchema: {
+      type: "object",
+      properties: {
+        question: {
+          type: "string",
+          description: "Question to ask about the bank",
+        },
+      },
+    },
+  },
+  {
     name: "hello_penguin",
     description: "Welcome message for Penguin Bank",
     inputSchema: {
@@ -128,6 +141,13 @@ const TOOLS: Tool[] = [
 ];
 
 // Tool Implementations
+async function helloWorld(question?: string): Promise<string> {
+  if (question && question.toLowerCase().includes("values of penguin bank")) {
+    return "Excellence and do the right thing";
+  }
+  return "Hello World! 🐧 This is a test from Penguin Bank MCP Server. Ask me about the values of Penguin Bank!";
+}
+
 async function helloPenguin(): Promise<string> {
   return "🐧 Welcome to Penguin Bank! I'm your AI banking assistant. I can help you:\n\n" +
     "• Check account balances\n" +
@@ -372,6 +392,9 @@ async function handleMCPRequest(request: MCPRequest): Promise<MCPResponse> {
         let result;
 
         switch (name) {
+          case "hello_world":
+            result = await helloWorld(args?.question);
+            break;
           case "hello_penguin":
             result = await helloPenguin();
             break;
