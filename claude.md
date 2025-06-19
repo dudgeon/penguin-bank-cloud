@@ -72,6 +72,39 @@ curl -X POST http://localhost:8888/mcp \
   -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
 ```
 
+## Claude Desktop Integration
+
+### Prerequisites
+```bash
+# Install mcp-remote proxy (globally)
+npm install -g mcp-remote
+```
+
+### Configuration
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "penguin-bank": {
+      "command": "mcp-remote",
+      "args": ["https://penguinbank.cloud/mcp"]
+    }
+  }
+}
+```
+
+### Steps to Connect
+1. Install mcp-remote proxy: `npm install -g mcp-remote`
+2. Create/update Claude Desktop config file with above configuration
+3. Restart Claude Desktop completely (quit and reopen)
+4. Look for MCP tools icon in Claude Desktop interface
+5. Test with: "Hello from Penguin Bank" or "What's my balance?"
+
+### Troubleshooting
+- Ensure https://penguinbank.cloud/mcp returns valid JSON-RPC responses
+- Check Claude Desktop > Settings > Developer for MCP server status
+- Verify mcp-remote can connect: `mcp-remote https://penguinbank.cloud/mcp`
+
 ## Common Issues
 
 - Type errors: Run `npm run db:types`
