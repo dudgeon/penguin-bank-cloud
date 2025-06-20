@@ -34,9 +34,10 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-  # Deploy to Netlify using CLI
+  # Deploy to Netlify using CLI - DISABLED to preserve existing working edge function during Cloudflare migration
   deploy:
     runs-on: ubuntu-latest
+    if: false  # Disabled to prevent changes to working Netlify edge function
     steps:
       - uses: actions/checkout@v4
       
