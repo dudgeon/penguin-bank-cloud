@@ -143,3 +143,106 @@ Based on the PRD for migrating the PenguinBank MCP server from Netlify Functions
   - [ ] 6.9 Update documentation and clean up legacy Netlify code
   - [ ] 6.10 Validate all success metrics (Claude Desktop integration, performance benchmarks, zero regression)
   - [ ] 6.11 Conduct post-migration retrospective and document lessons learned 
+
+**NEXT PRIORITY TASKS:**
+1. **Section 3.0 - Transport Layer Implementation** - Focus on SSE (Server-Sent Events) for Claude Desktop compatibility
+2. **Section 2.13 - Claude Desktop Integration Debugging** - Investigate timeout and connection closure issues
+3. **Section 2.14 - CORS and Headers Optimization** - Address Permissions-Policy warnings and connection requirements
+
+---
+
+## Lessons Learned
+
+### **✅ What Worked Well:**
+
+1. **Official MCP SDK Integration**
+   - Using `@modelcontextprotocol/sdk` was the correct approach - not "reinventing the wheel"
+   - Proper JSON-RPC 2.0 implementation with `Server`, `ListToolsRequestSchema`, `CallToolRequestSchema`
+   - SDK handles protocol complexity correctly and provides type safety
+
+2. **Cloudflare Workers Platform**
+   - Excellent performance and global edge deployment
+   - Built-in observability with structured logging
+   - Seamless production deployment with custom domains
+   - Cost-effective serverless architecture
+
+3. **Development Workflow**
+   - Wrangler CLI provides excellent development experience with `wrangler dev --local`
+   - Real-time tail logging with `wrangler tail --env production` invaluable for debugging
+   - Environment-specific configurations work well for dev/prod separation
+
+4. **Testing Strategy**
+   - Cloudflare sandbox testing confirmed core MCP functionality works perfectly
+   - curl-based API testing provided immediate feedback during development
+   - Health endpoints essential for monitoring and debugging
+
+### **❌ Critical Discovery - Transport Layer Requirements:**
+
+1. **Claude Desktop vs Cloudflare Sandbox Differences**
+   - **Cloudflare Sandbox**: Works with standard HTTP POST JSON-RPC requests ✅
+   - **Claude Desktop**: Requires different transport layer (likely SSE or WebSocket) ❌
+   - This is NOT a protocol issue but a **transport mechanism** requirement
+
+2. **Connection Patterns**
+   - MCP error -32001 (Request timed out) suggests Claude Desktop expects persistent connections
+   - MCP error -32000 (Connection closed) indicates transport layer incompatibility
+   - Standard HTTP request/response insufficient for Claude Desktop integration
+
+3. **Browser Environment Constraints**
+   - Permissions-Policy header warnings indicate browser security restrictions
+   - iframe sandbox limitations affect Claude Desktop's web-based architecture
+   - CORS requirements may differ between testing environments and production clients
+
+### **🔧 Technical Insights:**
+
+1. **Wrangler Configuration Gotchas**
+   - Must run wrangler commands from `workers/` directory (not root)
+   - Environment-specific worker names essential: `penguin-bank-mcp-prod` vs `penguin-bank-mcp`
+   - Route configuration requires manual Cloudflare dashboard setup for custom domains
+
+2. **Development Environment Setup**
+   - Node.js v20+ required for Wrangler 4.x
+   - `nvm use 20` before all wrangler commands prevents version conflicts
+   - Local development requires `--local` flag to avoid remote dependencies during testing
+
+3. **Logging and Observability**
+   - Structured JSON logging with request IDs crucial for debugging distributed systems
+   - Real-time log tailing reveals client behavior patterns not visible in basic testing
+   - Duration tracking helps identify performance bottlenecks
+
+### **📋 Process Improvements:**
+
+1. **Testing Strategy Evolution**
+   - Start with simple curl tests for basic functionality
+   - Progress to Cloudflare sandbox for protocol validation
+   - End with actual client integration (Claude Desktop) to discover transport requirements
+   - Each testing layer reveals different categories of issues
+
+2. **Documentation Importance**
+   - Maintaining detailed task lists with status updates prevents losing context
+   - Recording exact error messages and browser console output essential for debugging
+   - Git commit messages should capture both successes AND known limitations
+
+3. **Incremental Deployment**
+   - Deploy to production early to test real-world routing and DNS
+   - Separate development and production worker environments prevents conflicts
+   - Custom domain configuration should be tested before declaring "completion"
+
+### **🚀 Next Phase Preparation:**
+
+1. **Transport Layer Research Needed**
+   - Investigate MCP specification for required transport mechanisms
+   - Research Claude Desktop's specific connection requirements
+   - Evaluate SSE vs WebSocket implementation trade-offs
+
+2. **Client Compatibility Matrix**
+   - Document which MCP clients work with which transport layers
+   - Test with multiple MCP client implementations beyond Claude Desktop
+   - Build compatibility testing into development workflow
+
+3. **Performance Optimization**
+   - Monitor Cloudflare Workers CPU time and memory usage
+   - Implement connection pooling if persistent connections required
+   - Consider caching strategies for frequently accessed tools
+
+**KEY TAKEAWAY**: The MCP protocol implementation was correct from the start. The challenge is implementing the right **transport layer** for different MCP clients, not the protocol logic itself. 

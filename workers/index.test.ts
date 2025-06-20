@@ -38,8 +38,10 @@ describe('Cloudflare Worker', () => {
       expect(data).toHaveProperty('mcp_server_ready', true);
       expect(data).toHaveProperty('timestamp');
       expect(data).toHaveProperty('metrics');
-      expect(data.metrics).toHaveProperty('total_requests');
-      expect(data.metrics).toHaveProperty('tool_executions');
+      expect(data.metrics).toHaveProperty('requests');
+      expect(data.metrics.requests).toHaveProperty('total');
+      expect(data.metrics).toHaveProperty('tools');
+      expect(data.metrics.tools).toHaveProperty('total');
     });
   });
 
@@ -219,7 +221,7 @@ describe('Cloudflare Worker', () => {
 
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
       expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, OPTIONS');
-      expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization');
+      expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization, Mcp-Session-Id');
     });
 
     test('should handle OPTIONS preflight requests', async () => {
@@ -229,10 +231,10 @@ describe('Cloudflare Worker', () => {
 
       const response = await worker.fetch(request, mockEnv, mockCtx);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(204);
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
       expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, OPTIONS');
-      expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization');
+      expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Content-Type, Authorization, Mcp-Session-Id');
     });
   });
 
@@ -324,7 +326,7 @@ describe('Cloudflare Worker', () => {
       
       const data = await response2.json();
 
-      expect(data.metrics.total_requests).toBeGreaterThanOrEqual(2);
+      expect((data as any).metrics.requests.total).toBeGreaterThanOrEqual(2);
     });
   });
 

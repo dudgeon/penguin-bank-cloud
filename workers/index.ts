@@ -33,12 +33,32 @@ export interface ExecutionContext {
 	passThroughOnException(): void;
 }
 
-// CORS headers for cross-origin requests
-const corsHeaders = {
-	'Access-Control-Allow-Origin': '*',
-	'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
-};
+// CORS headers for Claude Desktop Pro access
+// Dynamic origin setting based on request to support credentials
+function getCorsHeaders(request: Request): Record<string, string> {
+	const origin = request.headers.get('Origin');
+	const allowedOrigins = ['https://claude.ai', 'https://app.claude.ai'];
+	
+	const corsHeaders: Record<string, string> = {
+		'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+		'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
+		'Access-Control-Expose-Headers': 'Mcp-Session-Id',
+		'Access-Control-Max-Age': '86400',
+		'Access-Control-Allow-Credentials': 'true'
+	};
+
+	// Set origin dynamically to support credentials
+	if (origin && allowedOrigins.includes(origin)) {
+		corsHeaders['Access-Control-Allow-Origin'] = origin;
+	} else {
+		// Fallback for non-browser requests or development
+		corsHeaders['Access-Control-Allow-Origin'] = '*';
+		// Remove credentials when using wildcard origin
+		delete corsHeaders['Access-Control-Allow-Credentials'];
+	}
+
+	return corsHeaders;
+}
 
 interface JsonRpcRequest {
 	jsonrpc: string;
@@ -66,8 +86,8 @@ export default {
 			metrics.endRequest(requestId, 200);
 			
 			return new Response(null, {
-				status: 200,
-				headers: corsHeaders
+				status: 204,
+				headers: getCorsHeaders(request)
 			});
 		}
 
@@ -85,7 +105,7 @@ export default {
 			}), {
 				headers: { 
 					'Content-Type': 'application/json',
-					...corsHeaders
+					...getCorsHeaders(request)
 				}
 			});
 		}
@@ -134,7 +154,7 @@ export default {
 					status: 500,
 					headers: { 
 						'Content-Type': 'application/json',
-						...corsHeaders
+						...getCorsHeaders(request)
 					}
 				});
 			}
@@ -159,7 +179,7 @@ export default {
 			status: 500,
 			headers: { 
 				'Content-Type': 'application/json',
-				...corsHeaders
+				...getCorsHeaders(request)
 			}
 		});
 	},

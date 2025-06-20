@@ -2,6 +2,32 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { Env } from "../types/env";
 
+// CORS headers for Claude Desktop Pro access
+function getCorsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('Origin');
+  const allowedOrigins = ['https://claude.ai', 'https://app.claude.ai'];
+  
+  const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
+    'Access-Control-Expose-Headers': 'Mcp-Session-Id',
+    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'true'
+  };
+
+  // Set origin dynamically to support credentials
+  if (origin && allowedOrigins.includes(origin)) {
+    corsHeaders['Access-Control-Allow-Origin'] = origin;
+  } else {
+    // Fallback for non-browser requests or development
+    corsHeaders['Access-Control-Allow-Origin'] = '*';
+    // Remove credentials when using wildcard origin
+    delete corsHeaders['Access-Control-Allow-Credentials'];
+  }
+
+  return corsHeaders;
+}
+
 interface JsonRpcRequest {
   jsonrpc: string;
   id?: string | number | null;
@@ -182,9 +208,7 @@ export class PenguinBankMCPServer {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          ...getCorsHeaders(request)
         }
       });
     }
@@ -207,9 +231,7 @@ export class PenguinBankMCPServer {
             status: 200,
             headers: {
               'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+              ...getCorsHeaders(request)
             }
           });
         }
@@ -227,9 +249,7 @@ export class PenguinBankMCPServer {
           }), {
             headers: {
               'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+              ...getCorsHeaders(request)
             }
           });
         }
@@ -246,9 +266,7 @@ export class PenguinBankMCPServer {
           status: 400,
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            ...getCorsHeaders(request)
           }
         });
 
@@ -264,9 +282,7 @@ export class PenguinBankMCPServer {
           status: 500,
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            ...getCorsHeaders(request)
           }
         });
       }
@@ -275,9 +291,7 @@ export class PenguinBankMCPServer {
     return new Response('Method not allowed', { 
       status: 405,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        ...getCorsHeaders(request)
       }
     });
   }
