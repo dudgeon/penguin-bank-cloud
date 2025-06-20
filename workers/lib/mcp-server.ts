@@ -47,7 +47,7 @@ export class PenguinBankMCPServer {
     this.server = new Server(
       {
         name: "PenguinBank Demo",
-        version: "1.0.0",
+        version: "1.0.1",
       },
       {
         capabilities: {

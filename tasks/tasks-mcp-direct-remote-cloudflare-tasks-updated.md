@@ -65,6 +65,21 @@ The main fixes needed are CORS headers and proper Streamable HTTP transport.
 - Follow [Cloudflare's official MCP server guide](https://developers.cloudflare.com/agents/guides/remote-mcp-server/)
 - **PRODUCTION DEPLOYMENT**: MCP server is now live at https://mcp.penguinbank.cloud/ (root path access)
 
+### Lessons Learned
+
+**🚨 DEPLOYMENT ISSUE RESOLUTION (2025-06-20)**:
+- **Problem**: CORS headers appeared correct in code but weren't working in production
+- **Root Cause**: Multiple Cloudflare Workers with same codebase, deploying to wrong worker
+- **Solution**: Always deploy to production environment: `npm run deploy -- --env production`
+- **Testing**: Verify deployment target matches domain routing in Cloudflare dashboard
+- **Prevention**: Always check `wrangler.toml` environments and routes before deployment
+
+**Key Debugging Steps**:
+1. Verify which worker handles the production domain
+2. Check Cloudflare dashboard for multiple workers with similar names
+3. Test both default deployment and environment-specific deployment
+4. Compare CORS headers between different endpoints (health vs MCP)
+
 <!-- CODING AGENT NOTE: The existing production deployment works with Cloudflare's sandbox but NOT with Claude Desktop.
 The issue is likely missing CORS headers and/or incomplete Streamable HTTP transport implementation. -->
 
@@ -131,7 +146,19 @@ The Worker itself is functional (works in Cloudflare sandbox), so the issue is
 specifically with Claude Desktop's requirements for remote servers.
 -->
 
-**STATUS UPDATE (2025-06-20)**: MCP server works in Cloudflare sandbox but fails with Claude Desktop Pro due to missing CORS headers and/or transport issues.
+**STATUS UPDATE (2025-06-20)**: ✅ CORS headers now working correctly! MCP server ready for Claude Desktop Pro testing.
+
+🚨 **CRITICAL DEPLOYMENT WARNING**: This project has multiple Cloudflare Workers. Always deploy to production with:
+```bash
+npm run deploy -- --env production
+```
+**Workers in this account:**
+- `penguin-bank-mcp` (default) - ❌ DO NOT USE for production
+- `penguin-bank-mcp-prod` (production) - ✅ USE THIS with --env production
+- `penguin-bank-mcp-production` (unused)
+- `penguin-bank-mcp-demo` (unused)
+
+**Domain routing**: `mcp.penguinbank.cloud/*` → `penguin-bank-mcp-prod` only
 
 <!-- CODING AGENT CONTEXT: 
 For Claude Desktop Pro remote server access, we need:
@@ -146,8 +173,8 @@ Do NOT implement workers-mcp proxy - that's only for non-Pro users.
 - [ ] 3.0 PRIORITY: Enable Direct Remote Access for Claude Desktop Pro
   <!-- THIS IS THE CRITICAL SECTION - Without these fixes, Claude Desktop Pro cannot connect -->
   
-  - [ ] 3.1 Implement proper CORS headers for Claude Desktop
-    <!-- CORS is MANDATORY for remote servers. Without it, Claude Desktop will block the connection. -->
+  - [x] 3.1 Implement proper CORS headers for Claude Desktop
+    <!-- ✅ COMPLETED: CORS is MANDATORY for remote servers. Without it, Claude Desktop will block the connection. -->
     - [x] 3.1.1 Add CORS headers to all responses:
       ```javascript
       const corsHeaders = {
@@ -159,16 +186,24 @@ Do NOT implement workers-mcp proxy - that's only for non-Pro users.
         'Access-Control-Allow-Credentials': 'true'
       };
       ```
-      <!-- NOTE: Some browsers don't support multiple origins in Allow-Origin. 
-           You may need to dynamically set based on the Origin header:
-      ```javascript
-      const origin = request.headers.get('Origin');
-      if (origin === 'https://claude.ai' || origin === 'https://app.claude.ai') {
-        corsHeaders['Access-Control-Allow-Origin'] = origin;
-      }
-      ```
+      <!-- ✅ COMPLETED: Dynamic origin detection implemented in both index.ts and mcp-server.ts
+      
+      🚨 CRITICAL DEPLOYMENT WARNING:
+      Multiple Cloudflare Workers exist for this project:
+      - penguin-bank-mcp (default) - DO NOT USE for production
+      - penguin-bank-mcp-prod (production) - ALWAYS deploy here with --env production
+      - penguin-bank-mcp-production (unused)
+      - penguin-bank-mcp-demo (unused)
+      
+      ALWAYS deploy to production with: npm run deploy -- --env production
+      
+      TESTING RESULTS:
+      - OPTIONS preflight: Returns 204 with full CORS headers ✅
+      - Dynamic origin: Returns 'https://claude.ai' when that origin is sent ✅
+      - All MCP endpoints: Include 'Mcp-Session-Id' in allowed headers ✅
+      - Credentials support: Working for specific origins ✅
       -->
-    - [ ] 3.1.2 Handle preflight OPTIONS requests correctly:
+    - [x] 3.1.2 Handle preflight OPTIONS requests correctly:
       ```javascript
       export default {
         async fetch(request: Request, env: Env): Promise<Response> {
@@ -183,10 +218,10 @@ Do NOT implement workers-mcp proxy - that's only for non-Pro users.
         }
       }
       ```
-      <!-- OPTIONS requests must return 204 with no body and complete CORS headers -->
-    - [ ] 3.1.3 Add CORS headers to ALL responses (success and error)
-      <!-- Every response, including error responses, must have CORS headers -->
-    - [ ] 3.1.4 Test CORS implementation with curl:
+      <!-- ✅ COMPLETED: OPTIONS requests return 204 with complete CORS headers including dynamic origin -->
+    - [x] 3.1.3 Add CORS headers to ALL responses (success and error)
+      <!-- ✅ COMPLETED: All responses (success, error, notifications) include CORS headers via getCorsHeaders() function -->
+    - [x] 3.1.4 Test CORS implementation with curl:
       ```bash
       # Test preflight
       curl -X OPTIONS https://mcp.penguinbank.cloud \
@@ -196,6 +231,11 @@ Do NOT implement workers-mcp proxy - that's only for non-Pro users.
       
       # Should see all CORS headers in response
       ```
+      <!-- ✅ COMPLETED: All tests pass
+      - OPTIONS returns 204 with dynamic origin 'https://claude.ai'
+      - POST requests include 'Mcp-Session-Id' in allowed headers
+      - All endpoints tested and working correctly
+      -->
 
   - [ ] 3.2 Implement Streamable HTTP transport
     <!-- Modern MCP standard - replaces deprecated SSE -->
