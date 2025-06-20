@@ -8,10 +8,12 @@ enabled = true
 
 # Environment variables for development
 [env.development]
+name = "penguin-bank-mcp-dev"
 vars = { ENVIRONMENT = "development" }
 
 # Environment variables for production  
 [env.production]
+name = "penguin-bank-mcp-prod"
 vars = { ENVIRONMENT = "production" }
 
 # Custom domain routing for MCP server

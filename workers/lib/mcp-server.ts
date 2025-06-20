@@ -2,6 +2,13 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { Env } from "../types/env";
 
+interface JsonRpcRequest {
+  jsonrpc: string;
+  id?: string | number | null;
+  method: string;
+  params?: any;
+}
+
 /**
  * PenguinBank MCP Server using the official MCP SDK
  * 
@@ -162,5 +169,116 @@ export class PenguinBankMCPServer {
 
   getServer() {
     return this.server;
+  }
+
+  /**
+   * Handle HTTP request using MCP SDK transport
+   */
+  async handleRequest(request: Request): Promise<Response> {
+    // For SSE connections - simplified implementation
+    if (request.headers.get('Accept') === 'text/event-stream') {
+      return new Response('data: {"jsonrpc":"2.0","method":"notifications/initialized"}\n\n', {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+
+    // For regular HTTP POST requests
+    if (request.method === 'POST') {
+      try {
+        const body = await request.json() as JsonRpcRequest;
+        
+        console.log('MCP Request received:', {
+          method: body.method,
+          id: body.id,
+          hasId: body.id !== undefined,
+          isNotification: body.method && body.method.startsWith('notifications/')
+        });
+        
+        // Handle notifications (no response required)
+        if (body.method && body.method.startsWith('notifications/')) {
+          return new Response('', { 
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
+          });
+        }
+
+        // Use the server's request handlers
+        const handlers = (this.server as any)._requestHandlers;
+        const handler = handlers.get(body.method);
+        
+        if (handler) {
+          const result = await handler(body);
+          return new Response(JSON.stringify({
+            jsonrpc: '2.0',
+            id: body.id,
+            result
+          }), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
+          });
+        }
+
+        // Method not found
+        return new Response(JSON.stringify({
+          jsonrpc: '2.0',
+          id: body.id,
+          error: {
+            code: -32601,
+            message: `Method not found: ${body.method}`
+          }
+        }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        });
+
+      } catch (error) {
+        return new Response(JSON.stringify({
+          jsonrpc: '2.0',
+          error: {
+            code: -32603,
+            message: 'Internal error',
+            data: error instanceof Error ? error.message : 'Unknown error'
+          }
+        }), {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        });
+      }
+    }
+
+    return new Response('Method not allowed', { 
+      status: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
   }
 } 
