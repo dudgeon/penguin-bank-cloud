@@ -17,6 +17,8 @@
  */
 
 import { PenguinBankMCPServer } from './lib/mcp-server';
+import { logger } from './lib/logger';
+import { metrics } from './lib/metrics';
 import type { Env } from './types/env';
 
 interface JsonRpcRequest {
@@ -29,6 +31,23 @@ interface JsonRpcRequest {
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
+		const startTime = Date.now();
+		const requestId = crypto.randomUUID();
+		
+		// Log incoming request
+		logger.logRequest(request.method, url.pathname, requestId, {
+			userAgent: request.headers.get('User-Agent'),
+			origin: request.headers.get('Origin')
+		});
+		
+		// Start metrics tracking
+		metrics.startRequest(
+			requestId, 
+			request.method, 
+			url.pathname, 
+			request.headers.get('User-Agent') || undefined,
+			request.headers.get('Origin') || undefined
+		);
 		
 		// Add CORS headers
 		const corsHeaders = {
@@ -44,10 +63,15 @@ export default {
 
 		// Health check endpoint
 		if (url.pathname === '/health') {
+			const duration = Date.now() - startTime;
+			logger.logResponse(request.method, url.pathname, requestId, 200, duration);
+			metrics.endRequest(requestId, 200);
+			
 			return new Response(JSON.stringify({ 
 				status: 'healthy',
 				mcp_server_ready: true,
-				timestamp: new Date().toISOString()
+				timestamp: new Date().toISOString(),
+				metrics: metrics.getMetricsSummary()
 			}), {
 				headers: { 
 					'Content-Type': 'application/json',
@@ -77,11 +101,18 @@ export default {
 				if (request.method === 'POST') {
 					const body = await request.json() as JsonRpcRequest;
 					
+					logger.debug('MCP request received', {
+						requestId,
+						method: body.method,
+						id: body.id
+					});
+					
 					// Create MCP server instance
 					const mcpServer = new PenguinBankMCPServer();
 					
 					// Handle initialize request
 					if (body.method === 'initialize') {
+						metrics.endRequest(requestId, 200);
 						return new Response(JSON.stringify({
 							jsonrpc: '2.0',
 							id: body.id,
@@ -106,6 +137,7 @@ export default {
 					// For now, return a simple response for other methods
 					// TODO: Properly integrate with the MCP SDK's request handling
 					if (body.method === 'tools/list') {
+						metrics.endRequest(requestId, 200);
 						return new Response(JSON.stringify({
 							jsonrpc: '2.0',
 							id: body.id,
@@ -175,7 +207,18 @@ export default {
 
 					if (body.method === 'tools/call') {
 						const { name, arguments: args } = body.params;
+						const toolStartTime = Date.now();
 						let result;
+						
+						logger.info('Tool execution started', {
+							requestId,
+							toolName: name,
+							arguments: args
+						});
+						
+						// Start tool metrics tracking
+						const argsSize = JSON.stringify(args || {}).length;
+						metrics.startToolExecution(name, requestId, argsSize);
 
 						switch (name) {
 							case "get_account_balance":
@@ -230,6 +273,8 @@ export default {
 								break;
 
 							default:
+								metrics.endToolExecution(name, requestId, false);
+								metrics.endRequest(requestId, 400);
 								return new Response(JSON.stringify({
 									jsonrpc: '2.0',
 									id: body.id,
@@ -246,6 +291,14 @@ export default {
 								});
 						}
 
+						const toolDuration = Date.now() - toolStartTime;
+						logger.logToolExecution(name, requestId, toolDuration, true);
+						
+						// End tool metrics tracking
+						const responseSize = JSON.stringify(result).length;
+						metrics.endToolExecution(name, requestId, true, responseSize);
+						metrics.endRequest(requestId, 200);
+
 						return new Response(JSON.stringify({
 							jsonrpc: '2.0',
 							id: body.id,
@@ -259,6 +312,7 @@ export default {
 					}
 
 					// Default response for unknown methods
+					metrics.endRequest(requestId, 400);
 					return new Response(JSON.stringify({
 						jsonrpc: '2.0',
 						id: body.id,
@@ -276,7 +330,17 @@ export default {
 				}
 
 			} catch (error) {
-				console.error('MCP Server Error:', error);
+				const duration = Date.now() - startTime;
+				logger.error('MCP Server Error', {
+					requestId,
+					method: request.method,
+					path: url.pathname,
+					duration
+				}, error instanceof Error ? error : new Error(String(error)));
+				
+				logger.logResponse(request.method, url.pathname, requestId, 500, duration);
+				metrics.endRequest(requestId, 500);
+				
 				return new Response(JSON.stringify({
 					jsonrpc: '2.0',
 					error: {
@@ -295,6 +359,17 @@ export default {
 		}
 
 		// Default response for unknown paths
+		const duration = Date.now() - startTime;
+		logger.warn('Unknown endpoint accessed', {
+			requestId,
+			method: request.method,
+			path: url.pathname,
+			duration
+		});
+		
+		logger.logResponse(request.method, url.pathname, requestId, 404, duration);
+		metrics.endRequest(requestId, 404);
+		
 		return new Response(JSON.stringify({
 			error: 'Not Found',
 			message: 'Available endpoints: /health, /mcp, /sse'

@@ -37,7 +37,8 @@
     /* Skip type checking all .d.ts files. */
 		"skipLibCheck": true,
 		"types": [
-			"@cloudflare/workers-types/2023-07-01"
+			"@cloudflare/workers-types/2023-07-01",
+			"jest"
 		]
 	},
 	"exclude": [

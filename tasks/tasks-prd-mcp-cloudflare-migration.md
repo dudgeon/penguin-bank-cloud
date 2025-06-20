@@ -8,6 +8,8 @@ Based on the PRD for migrating the PenguinBank MCP server from Netlify Functions
 - `workers/index.test.ts` - Unit tests for main Worker functionality
 - `workers/lib/mcp-server.ts` - Core MCP protocol implementation and JSON-RPC handling
 - `workers/lib/mcp-server.test.ts` - Unit tests for MCP server logic
+- `workers/lib/logger.ts` - Structured logging utility with different levels and request tracking
+- `workers/lib/metrics.ts` - Performance metrics tracking (response times, connection counts, tool execution metrics)
 - `workers/lib/sse-handler.ts` - Server-Sent Events transport implementation
 - `workers/lib/sse-handler.test.ts` - Unit tests for SSE functionality
 - `workers/lib/supabase-client.ts` - Supabase database integration for Workers
@@ -33,6 +35,10 @@ Based on the PRD for migrating the PenguinBank MCP server from Netlify Functions
 
 ## Tasks
 
+- [x] 0.1 PRIORITY: Preserve existing Netlify edge function during migration
+  - [x] 0.1.1 Disable Netlify CLI deployment in GitHub Actions to prevent accidental changes to working edge function
+  - [x] 0.1.2 Keep existing Netlify MCP server as backup/archive during Cloudflare Workers migration
+
 - [x] 1.0 Environment Setup and Project Foundation
   - [x] 1.1 Install and configure Wrangler CLI (`npm install -g wrangler@latest` and `wrangler login`)
   - [x] 1.2 Create Cloudflare account and add domains (penguinbank.cloud, mcp.penguinbank.cloud) to Cloudflare DNS
@@ -51,9 +57,9 @@ Based on the PRD for migrating the PenguinBank MCP server from Netlify Functions
   - [x] 2.4 Implement session management with `Mcp-Session-Id` header tracking
   - [x] 2.5 Add structured error handling with proper JSON-RPC error codes
   - [x] 2.6 Create environment types definition (`workers/types/env.ts`) for TypeScript
-  - [ ] 2.7 Implement structured logging for debugging and monitoring
-  - [ ] 2.8 Add performance metrics tracking (response times, connection counts)
-  - [ ] 2.9 Write unit tests for core MCP server functionality
+  - [x] 2.7 Implement structured logging for debugging and monitoring
+  - [x] 2.8 Add performance metrics tracking (response times, connection counts)
+  - [x] 2.9 Write unit tests for core MCP server functionality
 
 - [ ] 3.0 Transport Layer Implementation (SSE + HTTP)
   - [ ] 3.1 Implement Server-Sent Events handler (`workers/lib/sse-handler.ts`) using TransformStream
