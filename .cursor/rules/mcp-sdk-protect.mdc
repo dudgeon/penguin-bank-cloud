@@ -1,0 +1,41 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# MCP SDK Preservation Rules
+
+## STRICT PROHIBITION - DO NOT MODIFY CORE SDK
+- NEVER modify, rebuild, or refactor any files within the MCP SDK directory
+- NEVER recreate MCP SDK functionality from scratch
+- NEVER suggest alternative implementations of core MCP SDK components
+- Treat all MCP SDK files as read-only external dependencies
+
+## REQUIRED APPROACH
+- USE the MCP SDK as-is through its documented public APIs only
+- FOCUS on implementing your application code that consumes the SDK
+- IMPORT and use SDK modules according to their official documentation
+- If encountering SDK issues, work around them in YOUR code, not the SDK
+
+## TROUBLESHOOTING GUIDELINES
+When debugging MCP SDK integration:
+1. First verify correct import statements and module paths
+2. Check that you're using the correct SDK version
+3. Ensure proper initialization according to SDK docs
+4. Create wrapper functions in your code if needed
+5. Use try-catch blocks to handle SDK errors gracefully
+
+## ACCEPTABLE MODIFICATIONS
+You may ONLY:
+- Create configuration files required by the SDK
+- Write adapter/wrapper code in YOUR project files
+- Implement interfaces defined by the SDK
+- Add type definitions for better TypeScript support (in separate .d.ts files)
+
+## RED FLAGS TO AVOID
+If you find yourself:
+- Opening any file inside node_modules/mcp-sdk/
+- Suggesting "let's reimplement this part of the SDK"
+- Copying SDK source code to modify it
+- Creating "fixed" versions of SDK files
+STOP immediately and refocus on using the SDK's public API

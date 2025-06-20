@@ -1,5 +1,5 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, InitializeRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { Env } from "../types/env";
 
 // CORS headers for Claude Desktop Pro access
@@ -60,6 +60,20 @@ export class PenguinBankMCPServer {
   }
 
   private setupTools() {
+    // Handle initialization
+    this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
+      return {
+        protocolVersion: "2024-11-05",
+        capabilities: {
+          tools: {},
+        },
+        serverInfo: {
+          name: "PenguinBank Demo",
+          version: "1.0.1",
+        },
+      };
+    });
+
     // List available tools
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
@@ -198,7 +212,7 @@ export class PenguinBankMCPServer {
   }
 
   /**
-   * Handle HTTP request using MCP SDK transport
+   * Handle HTTP request using simplified approach compatible with MCP clients
    */
   async handleRequest(request: Request): Promise<Response> {
     // For SSE connections - simplified implementation
