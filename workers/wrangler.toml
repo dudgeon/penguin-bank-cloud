@@ -1,0 +1,20 @@
+name = "penguin-bank-mcp"
+main = "index.ts"
+compatibility_date = "2025-06-20"
+compatibility_flags = ["global_fetch_strictly_public"]
+
+[observability]
+enabled = true
+
+# Environment variables for development
+[env.development]
+vars = { ENVIRONMENT = "development" }
+
+# Environment variables for production  
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# Custom domain routing for MCP server
+routes = [
+  { pattern = "mcp.penguinbank.cloud/*", zone_name = "penguinbank.cloud" }
+] 

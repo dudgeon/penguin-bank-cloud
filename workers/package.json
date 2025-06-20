@@ -1,0 +1,31 @@
+{
+  "name": "penguin-bank-mcp-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PenguinBank MCP Server on Cloudflare Workers",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env development",
+    "deploy:production": "wrangler deploy --env production",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "types": "wrangler types",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "@types/jest": "^29.5.0",
+    "jest": "^29.7.0",
+    "jest-environment-miniflare": "^2.14.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.20.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
